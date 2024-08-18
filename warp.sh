@@ -26,7 +26,7 @@ PACKAGE_INSTALL=("apt -y install" "apt -y install" "yum -y install" "yum -y inst
 PACKAGE_REMOVE=("apt -y remove" "apt -y remove" "yum -y remove" "yum -y remove" "yum -y remove")
 PACKAGE_UNINSTALL=("apt -y autoremove" "apt -y autoremove" "yum -y autoremove" "yum -y autoremove" "yum -y autoremove")
 
-[[ $EUID -ne 0 ]] && red "注意: 请在root用户下运行脚本" && exit 1
+[[ $EUID -ne 0 ]] && red "Perhatian: Harap jalankan skrip sebagai pengguna root." && exit 1
 
 CMD=("$(grep -i pretty_name /etc/os-release 2>/dev/null | cut -d \" -f2)" "$(hostnamectl 2>/dev/null | grep -i system | cut -d : -f2)" "$(lsb_release -sd 2>/dev/null)" "$(grep -i description /etc/lsb-release 2>/dev/null | cut -d \" -f2)" "$(grep . /etc/redhat-release 2>/dev/null)" "$(grep . /etc/issue 2>/dev/null | cut -d \\ -f1 | sed '/^[ ]*$/d')")
 
@@ -38,7 +38,7 @@ for ((int = 0; int < ${#REGEX[@]}; int++)); do
     [[ $(echo "$SYS" | tr '[:upper:]' '[:lower:]') =~ ${REGEX[int]} ]] && SYSTEM="${RELEASE[int]}" && [[ -n $SYSTEM ]] && break
 done
 
-[[ -z $SYSTEM ]] && red "目前脚本暂未支持 ${SYS} 系统！" && exit 1
+[[ -z $SYSTEM ]] && red "Sistem ${SYS} untuk saat ini tidak didukung oleh skrip! " && exit 1
 
 wg1="sed -i '/0\.0\.0\.0\/0/d' /etc/wireguard/wgcf.conf"
 wg2="sed -i '/\:\:\/0/d' /etc/wireguard/wgcf.conf"
@@ -71,7 +71,7 @@ archAffix(){
         x86_64 | amd64 ) echo 'amd64' ;;
         armv8 | arm64 | aarch64 ) echo 'arm64' ;;
         s390x ) echo 's390x' ;;
-        * ) red "脚本暂不不支持 $(uname -m) 架构!" && exit 1 ;;
+        * ) red "Untuk saat ini, skrip tidak mendukung skema $(uname -m)!" && exit 1 ;;
     esac
 }
 
@@ -92,7 +92,7 @@ checkwarp(){
 }
 
 checkmtu(){
-    yellow "正在检测并设置MTU最佳值, 请稍等..."
+    yellow "Mendeteksi dan menetapkan nilai MTU yang optimal, mohon tunggu..."
     checkv4v6
     MTUy=1500
     MTUc=10
@@ -122,14 +122,14 @@ checkmtu(){
     done
     MTU=$((${MTUy} - 80))
     sed -i "s/MTU.*/MTU = $MTU/g" wgcf-profile.conf
-    green "MTU 最佳值=$MTU 已设置完毕"
+    green "Nilai optimal MTU=$MTU telah ditetapkan"
 }
 
 checktun(){
     if [[ ! $TUN =~ "in bad state"|"处于错误状态"|"ist in schlechter Verfassung" ]]; then
         if [[ $VIRT == lxc ]]; then
             if [[ $main -lt 5 ]] || [[ $minor -lt 6 ]]; then
-                red "检测到目前VPS未开启TUN模块, 请到后台控制面板处开启"
+                red "Terdeteksi bahwa VPS tidak memiliki modul TUN, silakan buka panel kontrol backend untuk mengaktifkannya."
                 exit 1
             else
                 return 0
@@ -137,7 +137,7 @@ checktun(){
         elif [[ $VIRT == "openvz" ]]; then
             wget -N --no-check-certificate https://cdn.jsdelivr.net/gh/mikupeto/warp-script/files/tun.sh && bash tun.sh
         else
-            red "检测到目前VPS未开启TUN模块, 请到后台控制面板处开启"
+            red "Terdeteksi bahwa VPS tidak memiliki modul TUN, silakan buka panel kontrol backend untuk mengaktifkannya."
             exit 1
         fi
     fi
@@ -159,7 +159,7 @@ wgcfreg(){
     fi
 
     until [[ -a wgcf-account.toml ]]; do
-        yellow "正在向CloudFlare WARP注册账号, 如提示429 Too Many Requests错误请耐心等待脚本重试注册即可"
+        yellow "Melakukan registrasi untuk CloudFlare WARP, jika Anda mendapatkan kesalahan 429 Too Many Requests, mohon bersabar dan tunggu skrip untuk mencoba registrasi ulang."
         wgcf register --accept-tos
         sleep 5
     done
@@ -181,41 +181,41 @@ wgcfv4(){
 
     if [[ -n $lan4 && -n $out4 && -z $lan6 && -z $out6 ]]; then
         if [[ -n $(type -P wg-quick) && -n $(type -P wgcf) ]]; then
-            yellow "检测为纯IPv4的VPS，正在切换为Wgcf-WARP全局单栈模式 (WARP IPv4)"
+            yellow "Terdeteksi sebagai VPS IPv4 asli dan sedang beralih ke mode tumpukan tunggal global Wgcf-WARP (WARP IPv4)"
             wgcf1=$wg5 && wgcf2=$wg7 && wgcf3=$wg2 && wgcf4=$wg3
             switchconf
         else
-            yellow "检测为纯IPv4的VPS，正在安装Wgcf-WARP全局单栈模式 (WARP IPv4)"
+            yellow "Terdeteksi sebagai VPS IPv4 asli, Mode Tumpukan Tunggal Global Wgcf-WARP sedang diinstal (WARP IPv4)"
             wgcf1=$wg5 && wgcf2=$wg7 && wgcf3=$wg2 && wgcf4=$wg3
             installwgcf
         fi
     elif [[ -z $lan4 && -z $out4 && -n $lan6 && -n $out6 ]]; then
         if [[ -n $(type -P wg-quick) && -n $(type -P wgcf) ]]; then
-            yellow "检测为纯IPv6的VPS，正在切换为Wgcf-WARP全局单栈模式 (WARP IPv4 + 原生 IPv6)"
+            yellow "Terdeteksi sebagai VPS IPv6 asli dan sedang beralih ke mode tumpukan tunggal global Wgcf-WARP (WARP IPv4 + IPv6 asli)"
             wgcf1=$wg6 && wgcf2=$wg2 && wgcf3=$wg4
             switchconf
         else
-            yellow "检测为纯IPv6的VPS，正在安装Wgcf-WARP全局单栈模式 (WARP IPv4 + 原生 IPv6)"
+            yellow "Terdeteksi sebagai VPS IPv6 asli, Mode Tumpukan Tunggal Global Wgcf-WARP sedang diinstal (WARP IPv4 + IPv6 Asli)"
             wgcf1=$wg6 && wgcf2=$wg2 && wgcf3=$wg4
             installwgcf
         fi
     elif [[ -n $lan4 && -n $out4 && -n $lan6 && -n $out6 ]]; then
         if [[ -n $(type -P wg-quick) && -n $(type -P wgcf) ]]; then
-            yellow "检测为原生双栈的VPS，正在切换为Wgcf-WARP全局单栈模式 (WARP IPv4 + 原生 IPv6)"
+            yellow "VPS terdeteksi sebagai dual-stack asli, dialihkan ke mode single-stack global Wgcf-WARP (WARP IPv4 + IPv6 asli)"
             wgcf1=$wg5 && wgcf2=$wg7 && wgcf3=$wg2
             switchconf
         else
-            yellow "检测为原生双栈的VPS，正在安装Wgcf-WARP全局单栈模式 (WARP IPv4 + 原生 IPv6)"
+            yellow "Terdeteksi sebagai VPS dual-stack asli, dan sedang menginstal mode single-stack global Wgcf-WARP (WARP IPv4 + IPv6 asli)"
             wgcf1=$wg5 && wgcf2=$wg7 && wgcf3=$wg2
             installwgcf
         fi
     elif [[ -n $lan4 && -z $out4 && -n $lan6 && -n $out6 ]]; then
         if [[ -n $(type -P wg-quick) && -n $(type -P wgcf) ]]; then
-            yellow "检测为NAT IPv4+原生 IPv6的VPS，正在切换为Wgcf-WARP全局单栈模式 (WARP IPv4 + 原生 IPv6)"
+            yellow "VPS terdeteksi sebagai NAT IPv4 + IPv6 asli, dialihkan ke mode tumpukan tunggal global Wgcf-WARP (WARP IPv4 + IPv6 asli)"
             wgcf1=$wg6 && wgcf2=$wg7 && wgcf3=$wg2 && wgcf4=$wg4
             switchconf
         else
-            yellow "检测为NAT IPv4+原生IPv6的VPS，正在安装Wgcf-WARP全局单栈模式 (WARP IPv4 + 原生 IPv6)"
+            yellow "Terdeteksi sebagai VPS NAT IPv4 + IPv6 asli dan sedang menginstal Mode Tumpukan Tunggal Global Wgcf-WARP (WARP IPv4 + IPv6 Asli)"
             wgcf1=$wg6 && wgcf2=$wg7 && wgcf3=$wg2 && wgcf4=$wg4
             installwgcf
         fi
@@ -234,41 +234,41 @@ wgcfv6(){
 
     if [[ -n $lan4 && -n $out4 && -z $lan6 && -z $out6 ]]; then
         if [[ -n $(type -P wg-quick) && -n $(type -P wgcf) ]]; then
-            yellow "检测为纯IPv4的VPS，正在切换为Wgcf-WARP全局单栈模式 (原生IPv4 + WARP IPv6)"           
+            yellow "Terdeteksi sebagai VPS IPv4 murni dan sedang beralih ke mode tumpukan tunggal global Wgcf-WARP (IPv4 asli + WARP IPv6)"           
             wgcf1=$wg5 && wgcf2=$wg1 && wgcf3=$wg3
             switchconf
         else
-            yellow "检测为纯IPv4的VPS，正在安装Wgcf-WARP全局单栈模式 (原生IPv4 + WARP IPv6)"
+            yellow "Terdeteksi sebagai VPS IPv4 murni, Mode Tumpukan Tunggal Global Wgcf-WARP sedang diinstal (IPv4 Asli + IPv6 WARP)"
             wgcf1=$wg5 && wgcf2=$wg1 && wgcf3=$wg3
             installwgcf
         fi
     elif [[ -z $lan4 && -z $out4 && -n $lan6 && -n $out6 ]]; then
         if [[ -n $(type -P wg-quick) && -n $(type -P wgcf) ]]; then
-            yellow "检测为纯IPv6的VPS，正在切换为Wgcf-WARP全局单栈模式 (WARP IPv6)"            
+            yellow "Terdeteksi sebagai VPS IPv6 murni dan sedang beralih ke mode tumpukan tunggal global Wgcf-WARP (WARP IPv6)"            
             wgcf1=$wg6 && wgcf2=$wg8 && wgcf3=$wg1 && wgcf4=$wg4
             switchconf
         else
-            yellow "检测为纯IPv6的VPS，正在安装Wgcf-WARP全局单栈模式 (WARP IPv6)"
+            yellow "Terdeteksi sebagai VPS IPv6 murni, Mode Tumpukan Tunggal Global Wgcf-WARP sedang diinstal (WARP IPv6)"
             wgcf1=$wg6 && wgcf2=$wg8 && wgcf3=$wg1 && wgcf4=$wg4
             installwgcf
         fi
     elif [[ -n $lan4 && -n $out4 && -n $lan6 && -n $out6 ]]; then
         if [[ -n $(type -P wg-quick) && -n $(type -P wgcf) ]]; then
-            yellow "检测为原生双栈的VPS，正在切换为Wgcf-WARP全局单栈模式 (原生 IPv4 + WARP IPv6)"            
+            yellow "VPS terdeteksi sebagai dual-stack asli, sedang dialihkan ke mode single-stack global Wgcf-WARP (IPv4 asli + IPv6 WARP)"            
             wgcf1=$wg5 && wgcf2=$wg8 && wgcf3=$wg1
             switchconf
         else
-            yellow "检测为原生双栈的VPS，正在安装Wgcf-WARP全局单栈模式 (原生 IPv4 + WARP IPv6)"
+            yellow "Terdeteksi sebagai VPS dual-stack asli, sedang menginstal mode single-stack global Wgcf-WARP (IPv4 asli + IPv6 WARP)"
             wgcf1=$wg5 && wgcf2=$wg8 && wgcf3=$wg1
             installwgcf
         fi
     elif [[ -n $lan4 && -z $out4 && -n $lan6 && -n $out6 ]]; then
         if [[ -n $(type -P wg-quick) && -n $(type -P wgcf) ]]; then
-            yellow "检测为NAT IPv4+原生 IPv6的VPS，正在切换为Wgcf-WARP全局单栈模式 (WARP IPv6)"            
+            yellow "Terdeteksi sebagai NAT IPv4 + VPS IPv6 asli, sedang beralih ke mode tumpukan tunggal global Wgcf-WARP (WARP IPv6)"            
             wgcf1=$wg6 && wgcf2=$wg9 && wgcf3=$wg1 && wgcf4=$wg4
             switchconf
         else
-            yellow "检测为NAT IPv4+原生 IPv6的VPS，正在安装Wgcf-WARP全局单栈模式 (WARP IPv6)"
+            yellow "Terdeteksi sebagai NAT IPv4 + VPS IPv6 asli, sedang menginstal Mode Tumpukan Tunggal Global Wgcf-WARP (WARP IPv6)"
             wgcf1=$wg6 && wgcf2=$wg9 && wgcf3=$wg1 && wgcf4=$wg4
             installwgcf
         fi
@@ -1189,13 +1189,13 @@ warpsw(){
 }
 
 manage1(){
-    green "请选择以下选项："
-    echo -e " ${GREEN}1.${PLAIN} 安装/切换 Wgcf-WARP 单栈模式 ${YELLOW}(WARP IPv4)${PLAIN}"
-    echo -e " ${GREEN}2.${PLAIN} 安装/切换 Wgcf-WARP 单栈模式 ${YELLOW}(WARP IPv6)${PLAIN}"
-    echo -e " ${GREEN}3.${PLAIN} 安装/切换 Wgcf-WARP 双栈模式"
-    echo -e " ${GREEN}4.${PLAIN} 开启、关闭和重启 Wgcf-WARP"
-    echo -e " ${GREEN}5.${PLAIN} ${RED}卸载 Wgcf-WARP${PLAIN}"
-    read -rp "请输入选项：" answer1
+    green "Silakan pilih opsi di bawah ini: "
+    echo -e " ${GREEN}1.${PLAIN} Instalasi/Mengalihkan Mode Single Stack Wgcf-WARP ${YELLOW}(WARP IPv4)${PLAIN}"
+    echo -e " ${GREEN}2.${PLAIN} Instalasi/Mengalihkan Mode Single Stack Wgcf-WARP ${YELLOW}(WARP IPv6)${PLAIN}"
+    echo -e " ${GREEN}3.${PLAIN} Menginstal/Mengalihkan Mode Dual Stack Wgcf-WARP"
+    echo -e " ${GREEN}4.${PLAIN} Mengaktifkan, Menonaktifkan, dan Memulai ulang Wgcf-WARP"
+    echo -e " ${GREEN}5.${PLAIN} ${RED}Uninstall Wgcf-WARP${PLAIN}"
+    read -rp "Silakan masukkan opsi: " answer1
     case $answer1 in
         1) wgcfv4 ;;
         2) wgcfv6 ;;
@@ -1207,13 +1207,13 @@ manage1(){
 }
 
 manage2(){
-    green "请选择以下选项："
+    green "Silakan pilih opsi di bawah ini:"
     echo -e " ${GREEN}1.${PLAIN} 安装 WARP-Cli 并添加IPv4网卡出口"
     echo -e " ${GREEN}2.${PLAIN} 安装 WARP-Cli 并创建本地Socks5代理"
     echo -e " ${GREEN}3.${PLAIN} 修改 WARP-Cli 本地Socks5代理端口"
     echo -e " ${GREEN}4.${PLAIN} 开启、关闭和重启 WARP-Cli"
     echo -e " ${GREEN}5.${PLAIN} ${RED}卸载 WARP-Cli${PLAIN}"
-    read -rp "请输入选项：" answer2
+    read -rp "Silakan masukkan opsi: " answer2
     case $answer2 in
         1) warpcli=1 && installcli ;;
         2) warpcli=2 && installcli ;;
@@ -1225,12 +1225,12 @@ manage2(){
 }
 
 manage3(){
-    green "请选择以下选项："
-    echo -e " ${GREEN}1.${PLAIN} 安装 WireProxy-WARP 并创建本地Socks5代理"
-    echo -e " ${GREEN}2.${PLAIN} 修改 WireProxy-WARP 本地Socks5代理端口"
-    echo -e " ${GREEN}3.${PLAIN} 开启、关闭和重启 WireProxy-WARP"
-    echo -e " ${GREEN}4.${PLAIN} ${RED}卸载 WireProxy-WARP${PLAIN}"
-    read -rp "请输入选项：" answer3
+    green "Silakan pilih opsi di bawah ini:"
+    echo -e " ${GREEN}1.${PLAIN} Instal WireProxy-WARP dan buat proksi Socks5 lokal"
+    echo -e " ${GREEN}2.${PLAIN} Ubah Port Proksi WireProxy-WARP Socks5 Lokal"
+    echo -e " ${GREEN}3.${PLAIN} Mengaktifkan, Menonaktifkan, dan Mengaktifkan Kembali WireProxy-WARP"
+    echo -e " ${GREEN}4.${PLAIN} ${RED}Uninstall WireProxy-WARP${PLAIN}"
+    read -rp "Silakan masukkan opsi:" answer3
     case $answer3 in
         1) installWireProxy ;;
         2) wireproxy_changeport ;;
@@ -1241,12 +1241,12 @@ manage3(){
 }
 
 manage4(){
-    green "请选择以下选项："
-    echo -e " ${GREEN}1.${PLAIN} 提取WireGuard配置文件"
-    echo -e " ${GREEN}2.${PLAIN} WARP+账户刷流量"
-    echo -e " ${GREEN}3.${PLAIN} 切换WARP账户"
-    echo -e " ${GREEN}4.${PLAIN} 获取解锁NF的WARP IP"
-    read -rp "请输入选项：" answer4
+    green "Silakan pilih opsi di bawah ini:"
+    echo -e " ${GREEN}1.${PLAIN} Mengekstrak File Konfigurasi WireGuard"
+    echo -e " ${GREEN}2.${PLAIN} Akun WARP+ untuk mengalihkan lalu lintas"
+    echo -e " ${GREEN}3.${PLAIN} Mengganti akun WARP"
+    echo -e " ${GREEN}4.${PLAIN} Dapatkan IP WARP untuk mengakses NF"
+    read -rp "Silakan masukkan opsi: " answer4
     case $answer4 in
         1) wgfile ;;
         2) warpup ;;
@@ -1256,7 +1256,7 @@ manage4(){
 }
 
 check_status(){
-    yellow "正在获取VPS配置信息，请稍等..."
+    yellow "Mengambil informasi konfigurasi VPS, mohon tunggu..."
     checkwarp
     
     stat4="${RED}Not Configured${PLAIN}"
@@ -1309,20 +1309,20 @@ show_status(){
 menu(){
     check_status
     clear
-    yellow "      CloudFlare WARP 一键脚本 "
+    yellow "      Skrip Manajemen CloudFlare WARP "
     yellow "           by Mikupeto"
     echo ""
     echo  " ------------------------------------ "
-    echo -e " ${GREEN}1.${PLAIN} 管理 Wgcf-WARP"
-    echo -e " ${GREEN}2.${PLAIN} 管理 WARP-Cli"
-    echo -e " ${GREEN}3.${PLAIN} 管理 WireProxy-WARP"
-    echo -e " ${GREEN}4.${PLAIN} WARP 脚本小工具"
+    echo -e " ${GREEN}1.${PLAIN} Manajemen Wgcf-WARP"
+    echo -e " ${GREEN}2.${PLAIN} Manajemen WARP-Cli"
+    echo -e " ${GREEN}3.${PLAIN} Manajemen WireProxy-WARP"
+    echo -e " ${GREEN}4.${PLAIN} Skrip perangkat WARP"
     echo  " ------------------------------------ "
-    echo -e " ${GREEN}0.${PLAIN} 退出脚本"
+    echo -e " ${GREEN}0.${PLAIN} Keluar dari skrip"
     echo ""
     show_status
     echo ""
-    read -rp "请输入选项：" answer
+    read -rp "Silakan masukkan pilihan: " answer
     case $answer in
         1) manage1 ;;
         2) manage2 ;;
